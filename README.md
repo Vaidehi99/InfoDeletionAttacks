@@ -2,7 +2,7 @@
 
 This repository includes code for the paper:
 
-[Can Sensitive Information be Deleted from LLMs? Objectives for Defending against Extraction Attacks]()
+[Can Sensitive Information be Deleted from LLMs? Objectives for Defending against Extraction Attacks](https://arxiv.org/abs/2309.17410)
 
 [Vaidehi Patil*](https://vaidehi99.github.io/), [Peter Hase*](https://peterbhase.github.io/), and [Mohit Bansal](https://www.cs.unc.edu/~mbansal/)
 
@@ -128,5 +128,13 @@ python3 -m experiments.evaluate_parap_attack     --alg_name MEMIT --window_sizes
 
 ### Citation
 ```
+@misc{patil2023sensitive,
+      title={Can Sensitive Information Be Deleted From LLMs? Objectives for Defending Against Extraction Attacks}, 
+      author={Vaidehi Patil and Peter Hase and Mohit Bansal},
+      year={2023},
+      eprint={2309.17410},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
 
 ```	
