@@ -128,13 +128,11 @@ python3 -m experiments.evaluate_parap_attack     --alg_name MEMIT --window_sizes
 
 ### Citation
 ```
-@misc{patil2023sensitive,
-      title={Can Sensitive Information Be Deleted From LLMs? Objectives for Defending Against Extraction Attacks}, 
-      author={Vaidehi Patil and Peter Hase and Mohit Bansal},
-      year={2023},
-      eprint={2309.17410},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
+@article{patil2023can,
+  title={Can Sensitive Information Be Deleted From LLMs? Objectives for Defending Against Extraction Attacks},
+  author={Patil, Vaidehi and Hase, Peter and Bansal, Mohit},
+  journal={arXiv preprint arXiv:2309.17410},
+  year={2023}
 }
 
 ```	
