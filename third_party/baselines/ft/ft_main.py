@@ -13,7 +13,7 @@ from util.fewshot_utils import score_from_batch, make_inputs
 from .ft_hparams import FTHyperParams
 import pickle
 
-rephrases = pickle.load(open("","rb"))
+rephrases = pickle.load(open("data/parap_all_new.pkl","rb"))
 prefixes = ["", "A new study suggests. ", "The following is a. ", "I've always been. ", "The following blog post. "]
 
 

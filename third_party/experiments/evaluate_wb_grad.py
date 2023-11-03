@@ -1,3 +1,5 @@
+import os
+os.environ['TRANSFORMERS_CACHE'] = 'cache/'
 import argparse
 import json
 import os
@@ -17,15 +19,15 @@ from scipy.stats import hmean
 from transformers import AutoModelForCausalLM, AutoTokenizer
 # from baselines.efk import EFKHyperParams, EfkRewriteExecutor
 from baselines.ft import FTHyperParams, apply_ft_to_model
-from baselines.kn import KNHyperParams, apply_kn_to_model
-from baselines.mend import MENDHyperParams, MendRewriteExecutor
+#from baselines.kn import KNHyperParams, apply_kn_to_model
+#from baselines.mend import MENDHyperParams, MendRewriteExecutor
 from dsets import (
     AttributeSnippets,
     CounterFactDataset,
     CounterFactDataset_filtered,
     CounterFactDataset_filtered_paraphrases,
     CounterFactDataset_attack_paraphrases,
-    MENDQADataset,
+#    MENDQADataset,
     get_tfidf_vectorizer,
 )
 from experiments.causal_trace import ModelAndTokenizer, predict_token
@@ -51,7 +53,7 @@ from random import sample
 
 
 device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
-retain_rate_samples = json.load(open("","rb"))[700:]
+retain_rate_samples = json.load(open("data/counterfact_filtered_paraphrases.json","rb"))[700:]
 
 #field_names = ['name','actual_retain_rate', 'actual_retain_rate_neighborhood', 'delta_accuracy', 'delta_accuracy_neighborhood', 'retain_rate_neighborhood_pre', 'retain_rate_pre', 'retain_rate_neighborhood', 'retain_rate', 'post_rewrite_success', 'rewrite_prob_diff', 'rewrite_post_prob', 'rewrite_score', 'post_paraphrase_success', 'paraphrase_prob_diff', 'paraphrase_post_prob', 'paraphrase_score', 'post_neighborhood_success', 'neighborhood_prob_diff', 'neighborhood_score', 'essence_ppl_diff', 'topk_metric_agg', 'bottomk_metric_agg', 'top1_metric_agg', 'bottom1_metric_agg', 'target_prob_agg']
 field_names = ['name','actual_retain_rate', 'actual_retain_rate_neighborhood', 'delta_accuracy', 'delta_accuracy_neighborhood', 'retain_rate_neighborhood_pre', 'retain_rate_pre', 'retain_rate_neighborhood', 'retain_rate', 'post_rewrite_success', 'rewrite_prob_diff', 'rewrite_post_prob', 'rewrite_score', 'post_paraphrase_success', 'paraphrase_prob_diff', 'paraphrase_post_prob', 'paraphrase_score', 'post_neighborhood_success', 'neighborhood_prob_diff', 'neighborhood_score', 'essence_ppl_diff', 'topk_metric_agg', 'bottomk_metric_agg', 'topk_or_bottomk_metric_agg', 'top1_metric_agg', 'bottom1_metric_agg', 'top1_or_bottom1_metric_agg', 'target_prob_agg']
@@ -61,14 +63,14 @@ ALG_DICT = {
     "ROME": (ROMEHyperParams, apply_rome_to_model),
     "MEMIT": (MEMITHyperParams, apply_memit_to_model),
     "FT": (FTHyperParams, apply_ft_to_model),
-    "KN": (KNHyperParams, apply_kn_to_model),
-    "MEND": (MENDHyperParams, MendRewriteExecutor().apply_to_model),
+#    "KN": (KNHyperParams, apply_kn_to_model),
+#    "MEND": (MENDHyperParams, MendRewriteExecutor().apply_to_model),
     # "KE": (EFKHyperParams, EfkRewriteExecutor().apply_to_model),
 }
 
 DS_DICT = {
     "cf": (CounterFactDataset, compute_rewrite_quality_counterfact),
-    "zsre": (MENDQADataset, compute_rewrite_quality_zsre),
+#    "zsre": (MENDQADataset, compute_rewrite_quality_zsre),
     "cf_filt": (CounterFactDataset_filtered, compute_rewrite_quality_counterfact),
     "cf_filt_para": (CounterFactDataset_filtered_paraphrases, compute_rewrite_quality_counterfact),
     "cf_attack": (CounterFactDataset_attack_paraphrases, compute_rewrite_quality_counterfact),
@@ -76,9 +78,9 @@ DS_DICT = {
 }
 
 
-CODE_DIR=''
-BASE_DIR=''
-MODEL_DIR=''
+CODE_DIR='../third_party'
+BASE_DIR='../'
+MODEL_DIR='../models'
 
 _RESID_SUFFIXES = {".attn", ".mlp"}
 
@@ -1331,7 +1333,7 @@ if __name__ == "__main__":
             else:
                 print(f" missing {metric}")
 
-    with open('', 'a', newline='') as f_object:
+    with open('../results/results_wb_grad.csv', 'a', newline='') as f_object:
             writer = csv.writer(f_object)
             
             # dict = avg_metrics

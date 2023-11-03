@@ -10,7 +10,7 @@ from util import nethook
 
 from .rome_hparams import ROMEHyperParams
 import sys
-sys.path.insert(0,"")
+sys.path.insert(0,"../")
 from transformer_utils.src.transformer_utils.logit_lens.hooks import make_lens_hooks
 from transformer_utils.src.transformer_utils.logit_lens.layer_names import make_layer_names
 from transformer_utils.src.transformer_utils.util.module_utils import get_child_module_by_names
@@ -27,7 +27,8 @@ nltk.download('universal_tagset')
 
 # load tagger
 # tagger = SequenceTagger.load("flair/pos-english")
-rephrases = pickle.load(open("","rb"))
+#rephrases = pickle.load(open("","rb"))
+rephrases = pickle.load(open("data/parap_all_new.pkl","rb"))
 # tokens = twt().tokenize(text)
 # tags = nltk.pos_tag(tokens, tagset = "universal")
 

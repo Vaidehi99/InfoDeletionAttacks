@@ -1,3 +1,8 @@
+import os
+os.environ['TRANSFORMERS_CACHE'] = "../../"
+import nltk
+nltk.data.path.append("../")
+nltk.download('averaged_perceptron_tagger', download_dir='../')
 import argparse
 import json
 import os
@@ -16,15 +21,15 @@ from scipy.stats import hmean
 from transformers import AutoModelForCausalLM, AutoTokenizer
 # from baselines.efk import EFKHyperParams, EfkRewriteExecutor
 from baselines.ft import FTHyperParams, apply_ft_to_model
-from baselines.kn import KNHyperParams, apply_kn_to_model
-from baselines.mend import MENDHyperParams, MendRewriteExecutor
+#from baselines.kn import KNHyperParams, apply_kn_to_model
+#from baselines.mend import MENDHyperParams, MendRewriteExecutor
 from dsets import (
     AttributeSnippets,
     CounterFactDataset,
     CounterFactDataset_filtered,
     CounterFactDataset_filtered_paraphrases,
     CounterFactDataset_attack_paraphrases,
-    MENDQADataset,
+#    MENDQADataset,
     get_tfidf_vectorizer,
 )
 from experiments.causal_trace import ModelAndTokenizer, predict_token
@@ -38,7 +43,7 @@ from util.fewshot_utils import predict_model, fewshot_accuracy_sum, score_from_b
 from util.generate import generate_fast
 from util.globals import *
 import sys
-sys.path.insert(0,"")
+sys.path.insert(0,"../")
 from transformer_utils.src.transformer_utils.logit_lens.plotting import plot_logit_lens
 from transformer_utils.src.transformer_utils.logit_lens.hooks import make_lens_hooks
 from transformer_utils.src.transformer_utils.logit_lens.layer_names import make_layer_names
@@ -57,35 +62,41 @@ from transformers import set_seed
 
 device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 
-rephrases = pickle.load(open("","rb"))
+rephrases = pickle.load(open("data/parap_all_new.pkl","rb"))
 prefixes = ["", "A new study suggests. ", "The following is a. ", "I've always been. ", "The following blog post. "]
 prefixes = ["I'm trying out. ", "A man who was. ", "A woman was arrested. ", "A new report says that the US has the. ", "The following is a list of items that make. "]
 
-retain_rate_samples = json.load(open("","rb"))[700:]
+retain_rate_samples = json.load(open("data/counterfact_filtered_paraphrases.json","rb"))[700:]
 field_names = ['actual_retain_rate', 'actual_retain_rate_neighborhood', 'delta_accuracy', 'delta_accuracy_neighborhood', 'retain_rate_neighborhood_pre', 'retain_rate_pre', 'retain_rate_neighborhood', 'retain_rate', 'attack_frac', 'tgt_in_sample', 'post_rewrite_success', 'rewrite_prob_diff', 'rewrite_post_prob', 'rewrite_score', 'post_paraphrase_success', 'paraphrase_prob_diff', 'paraphrase_pre_prob', 'paraphrase_post_prob', 'paraphrase_score', 'post_neighborhood_success', 'neighborhood_prob_diff', 'neighborhood_score', 'essence_ppl_diff', 'name']
 
+
+# with open('/playpen/home/vaidehi/belief-localization/results/results.csv', 'w', newline='') as file:
+#         writer = csv.writer(file)
+#         writer.writerow(field_names)
 
 ALG_DICT = {
     "ROME": (ROMEHyperParams, apply_rome_to_model),
     "MEMIT": (MEMITHyperParams, apply_memit_to_model),
     "FT": (FTHyperParams, apply_ft_to_model),
-    "KN": (KNHyperParams, apply_kn_to_model),
-    "MEND": (MENDHyperParams, MendRewriteExecutor().apply_to_model),
+#    "KN": (KNHyperParams, apply_kn_to_model),
+#    "MEND": (MENDHyperParams, MendRewriteExecutor().apply_to_model),
     # "KE": (EFKHyperParams, EfkRewriteExecutor().apply_to_model),
 }
 
 DS_DICT = {
     "cf": (CounterFactDataset, compute_rewrite_quality_counterfact),
-    "zsre": (MENDQADataset, compute_rewrite_quality_zsre),
+#    "zsre": (MENDQADataset, compute_rewrite_quality_zsre),
     "cf_filt": (CounterFactDataset_filtered, compute_rewrite_quality_counterfact),
     "cf_filt_para": (CounterFactDataset_filtered_paraphrases, compute_rewrite_quality_counterfact),
     "cf_attack": (CounterFactDataset_attack_paraphrases, compute_rewrite_quality_counterfact),
 }
 
-
-CODE_DIR=''
-BASE_DIR=''
-MODEL_DIR=''
+# CODE_DIR='/home/peter/private/belief-localization/third_party'
+# BASE_DIR='/home/peter/private/belief-localization'
+# MODEL_DIR='/playpen/peter/models'
+CODE_DIR='../third_party'
+BASE_DIR='../'
+MODEL_DIR='../models'
 
 _RESID_SUFFIXES = {".attn", ".mlp"}
 
@@ -315,9 +326,9 @@ def sweep_experiment_name(args, model_name, alg_name, ds_name, sweep_params):
   elif args.fact_forcing:
     obj = '_fact-forcing'
   elif args.fact_erasure and args.margin_loss:
-    obj = '_fact-erasure_margin_layers'+str(args.margin_layers)
+    obj = '_fact-erasure_margin_layers'+str([args.margin_layers[0], args.margin_layers[-1]])
   elif args.fact_erasure and args.entropy_loss:
-    obj = '_fact-erasure_entropy_layers'+str(args.entropy_layers)
+    obj = '_fact-erasure_entropy_layers'+str([args.entropy_layers[0], args.entropy_layers[-1]])
   elif args.fact_erasure:
     obj = '_fact-erasure_no_margin_no_entropy'
   elif args.fact_amplification:
@@ -326,7 +337,7 @@ def sweep_experiment_name(args, model_name, alg_name, ds_name, sweep_params):
     obj = '_weight-tracing'
   else:
     obj = ''
-  return f'{exp_name}{obj}_n{args.dataset_size_limit}_t{args.datapoints_to_execute}_secondhalf{args.second_half}_analytical_soln{args.analytical_soln}_mp{args.model_parap}_parap_attack_{args.num_attack_parap}_{args.attack}_cfdef{args.cf_defense}'
+  return f'{exp_name}{obj}_n{args.dataset_size_limit}_t{args.datapoints_to_execute}_secondhalf{args.second_half}_analytical_soln{args.analytical_soln}_top-{args.k}_grad_attk_lyr_mp{args.model_parap}_parap_attack_{args.num_attack_parap}_{args.attack}_cfdef{args.cf_defense}_samp{args.bb_num_samples}'
 
 def ROME_experiment_name(args, model_name, alg_name, ds_name, hparams_to_add):
   exp_name = f'{model_name}/{alg_name}_outputs_{ds_name}'
@@ -345,7 +356,24 @@ def ROME_experiment_name(args, model_name, alg_name, ds_name, hparams_to_add):
     if _v == "-1":
         _v = "embeds"
     exp_name += f"_{k[:5]}-{_v}"
-  return exp_name
+  if args.tracing_reversal:
+    obj = '_trace-reverse'
+  elif args.fact_forcing:
+    obj = '_fact-forcing'
+  elif args.fact_erasure and args.margin_loss:
+    obj = '_fact-erasure_margin_layers'+str([args.margin_layers[0], args.margin_layers[-1]])
+  elif args.fact_erasure and args.entropy_loss:
+    obj = '_fact-erasure_entropy_layers'+str([args.entropy_layers[0], args.entropy_layers[-1]])
+  elif args.fact_erasure:
+    obj = '_fact-erasure_no_margin_no_entropy'
+  elif args.fact_amplification:
+    obj = '_fact-amplification'
+  elif args.weight_based_tracing:
+    obj = '_weight-tracing'
+  else:
+    obj = ''
+  return f'{exp_name}{obj}_n{args.dataset_size_limit}_t{args.datapoints_to_execute}_secondhalf{args.second_half}_analytical_soln{args.analytical_soln}_top-{args.k}_grad_attk_lyr_mp{args.model_parap}_parap_attack_{args.num_attack_parap}_{args.attack}_cfdef{args.cf_defense}_samp{args.bb_num_samples}'
+  #return exp_name
 
 def ROME_experiment_name_from_override_params(args, model_name, alg_name, ds_name, override_hparams, hparams_class):
   _model_name = model_name.replace('/', '_')
@@ -630,7 +658,7 @@ def main(
             print("Starting point: ", case_id)
             # print info for this point
             if args.dummy_string:
-                record["requested_rewrite"]['target_new']['str']="dummy"
+                record["requested_rewrite"]['target_new']['str']="I don't know"
             request = record["requested_rewrite"]
             subject = record["requested_rewrite"]['subject']
             prompt = request['prompt'].format(subject)
@@ -817,6 +845,7 @@ def main(
 
                 
 
+            # torch.save(model.state_dict(), "/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_ckpts/preedit_{}_{}_caseid_{}_editlayer_{}_{}.pt".format(args.alg_name, model_name, case_id, hparams.layers, ("margin_layers"+str(args.margin_layers) if args.margin_loss else "no_margin")))
             with torch.enable_grad(), nethook.TraceDict(model, [embed_layername], edit_output=noise_embeddings_f) if args.fact_forcing else nullcontext() as td:
               edited_model, weights_copy = apply_algo(
                   args,
@@ -833,6 +862,7 @@ def main(
               )
             exec_time = time.time() - start
             print("Execution took", exec_time)
+            # torch.save(model.state_dict(), "/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_ckpts/postedit_{}_{}_caseid_{}_editlayer_{}_{}.pt".format(args.alg_name, model_name, case_id, hparams.layers, ("margin_layers"+str(args.margin_layers) if args.margin_loss else "no_margin")))
             # exit()
             # state_a = model.state_dict().__str__()
             # state_b = edited_model.state_dict().__str__()
@@ -1010,10 +1040,12 @@ def main(
                 # print(target_ids)
                 # print(len(request['target_new']['str']))
                 # total_samp_exec += 1
+                # isin_top5, probs = plot_logit_lens(edited_model, tok, input_ids, target_ids, start_ix=0, end_ix=45, path="/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_plots/{}_{}_caseid_{}_editlayer_{}.png".format(args.alg_name, model_name, case_id, hparams.layers), probs=True, kl=False)
                 # isin_top5_sum += isin_top5[:,-1].astype(int)
                 # target_probs_sum += probs[:,-1]
                 
                 
+                # torch.save(edited_model.state_dict(), "/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_ckpts/{}_{}_caseid_{}_editlayer_{}_{}.pt".format(args.alg_name, model_name, case_id, hparams.layers, ("margin_layers"+str(args.margin_layers) if args.margin_loss else "no_margin")))
                 # exit()
                 # print(edited_model.state_dict()['transformer.h.17.mlp.c_proj.weight'])
               for k, v in weights_copy.items():
@@ -1071,7 +1103,12 @@ def main(
               print(f"skipping {case_result_path}, already run")
             else:
               pass
-    
+    # torch.save(target_probs_sum, "/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_ckpts/target_probs_sum_edited_layer_{}.pt".format(hparams.layers[0]))
+    # torch.save(isin_top5_sum, "/playpen/home/vaidehi/belief-localization/third_party/experiments/edited_ckpts/isin_top5_sum_edited_layer_{}.pt".format(hparams.layers[0]))
+    # torch.save(total_samp_exec, "/playpen2/vaidehi/belief-localization/third_party/experiments/edited_ckpts/total_samp_exec.pt")
+    # torch.save(target_probs_sum_preedit, "/playpen2/vaidehi/belief-localization/third_party/experiments/edited_ckpts/target_probs_sum_preedit.pt")
+    # torch.save(isin_top5_sum_preedit, "/playpen2/vaidehi/belief-localization/third_party/experiments/edited_ckpts/isin_top5_sum_preedit.pt")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1467,7 +1504,7 @@ if __name__ == "__main__":
     avg_metrics['name'] = file_name
 
     
-    with open('', 'a', newline='') as f_object:
+    with open('../results/results_bb.csv', 'a', newline='') as f_object:
             writer = csv.writer(f_object)
             
             # dict = avg_metrics

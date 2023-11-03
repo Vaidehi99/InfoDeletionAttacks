@@ -17,7 +17,7 @@ import pickle
 import nltk
 nltk.download('universal_tagset')
 
-rephrases = pickle.load(open("","rb"))
+rephrases = pickle.load(open("data/parap_all_new.pkl","rb"))
 
 
 def collect_logits(model, input_ids, layers=[46, 47]):
